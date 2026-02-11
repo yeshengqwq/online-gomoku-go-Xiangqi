@@ -1,6 +1,6 @@
 ---
 
-# 🎮 在线五子棋对弈平台 / Online Gomoku
+# 🎮 在线五子棋围棋象棋对弈平台 / Online Gomoku,go,Xiangqi
 
 [English](#english-version) | [中文说明](#chinese-version)
 
@@ -84,3 +84,4 @@ Use tools like **cpolar** to map local port 3000 to a public URL and share it wi
    * **Username**: Must be **unique** to avoid connection conflicts.
 
 ---
+
