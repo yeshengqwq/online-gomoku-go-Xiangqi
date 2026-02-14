@@ -238,6 +238,20 @@
         canvas.width = CANVAS_SIZE;
         canvas.height = CANVAS_SIZE;
 
+        function flipRow(r) {
+            if (gameMode === '3' && myRole === 2) {
+                return 9 - r;
+            }
+            return r;
+        }
+
+        function flipCol(c) {
+            if (gameMode === '3' && myRole === 2) {
+                return 8 - c;
+            }
+            return c;
+        }
+
         function toggleSizeInput() {
             const mode = document.getElementById('gameModeSelect').value;
             const container = document.getElementById('sizeInputContainer');
@@ -301,6 +315,7 @@
             }
             updatePlayersUI(players);
             updateStatus();
+            if (gameMode === '3') drawBoard();
         });
 
         socket.on('updateBoard', (data) => {
@@ -524,31 +539,27 @@
             ctx.beginPath();
             ctx.strokeStyle = '#333';
             ctx.lineWidth = 1;
-            // 横线
             for (let i = 0; i < 10; i++) {
-                ctx.moveTo(padding, padding + i * cellSize);
-                ctx.lineTo(padding + 8 * cellSize, padding + i * cellSize);
+                ctx.moveTo(padding + flipCol(0) * cellSize, padding + flipRow(i) * cellSize);
+                ctx.lineTo(padding + flipCol(8) * cellSize, padding + flipRow(i) * cellSize);
             }
-            // 纵线
             for (let i = 0; i < 9; i++) {
-                ctx.moveTo(padding + i * cellSize, padding);
+                ctx.moveTo(padding + flipCol(i) * cellSize, padding + flipRow(0) * cellSize);
                 if (i === 0 || i === 8) {
-                    ctx.lineTo(padding + i * cellSize, padding + 9 * cellSize);
+                    ctx.lineTo(padding + flipCol(i) * cellSize, padding + flipRow(9) * cellSize);
                 } else {
-                    ctx.lineTo(padding + i * cellSize, padding + 4 * cellSize);
-                    ctx.moveTo(padding + i * cellSize, padding + 5 * cellSize);
-                    ctx.lineTo(padding + i * cellSize, padding + 9 * cellSize);
+                    ctx.lineTo(padding + flipCol(i) * cellSize, padding + flipRow(4) * cellSize);
+                    ctx.moveTo(padding + flipCol(i) * cellSize, padding + flipRow(5) * cellSize);
+                    ctx.lineTo(padding + flipCol(i) * cellSize, padding + flipRow(9) * cellSize);
                 }
             }
-            // 九宫格
             const xLines = [[3,0,5,2], [5,0,3,2], [3,7,5,9], [5,7,3,9]];
             xLines.forEach(([c1, r1, c2, r2]) => {
-                ctx.moveTo(padding + c1 * cellSize, padding + r1 * cellSize);
-                ctx.lineTo(padding + c2 * cellSize, padding + r2 * cellSize);
+                ctx.moveTo(padding + flipCol(c1) * cellSize, padding + flipRow(r1) * cellSize);
+                ctx.lineTo(padding + flipCol(c2) * cellSize, padding + flipRow(r2) * cellSize);
             });
             ctx.stroke();
 
-            // 绘制棋子
             for (let r = 0; r < 10; r++) {
                 for (let c = 0; c < 9; c++) {
                     if (board[r] && board[r][c] !== 0) {
@@ -557,7 +568,6 @@
                 }
             }
 
-            // 绘制选中和最后移动标记
             if (selectedPiece) {
                 drawHighlight(selectedPiece.row, selectedPiece.col, 'rgba(0, 255, 0, 0.5)');
             }
@@ -569,12 +579,12 @@
 
         function drawHighlight(r, c, color) {
             ctx.fillStyle = color;
-            ctx.fillRect(padding + c * cellSize - cellSize/2, padding + r * cellSize - cellSize/2, cellSize, cellSize);
+            ctx.fillRect(padding + flipCol(c) * cellSize - cellSize/2, padding + flipRow(r) * cellSize - cellSize/2, cellSize, cellSize);
         }
 
         function drawXiangqiPiece(row, col, piece) {
-            const x = padding + col * cellSize;
-            const y = padding + row * cellSize;
+            const x = padding + flipCol(col) * cellSize;
+            const y = padding + flipRow(row) * cellSize;
             const names = ["", "帅", "仕", "相", "马", "车", "炮", "兵", "将", "士", "象", "马", "车", "炮", "卒"];
             
             ctx.beginPath();
@@ -649,10 +659,14 @@
             const scaleY = canvas.height / rect.height;
             const x = (e.clientX - rect.left) * scaleX;
             const y = (e.clientY - rect.top) * scaleY;
-            const col = Math.round((x - padding) / cellSize);
-            const row = Math.round((y - padding) / cellSize);
+            let col = Math.round((x - padding) / cellSize);
+            let row = Math.round((y - padding) / cellSize);
             
             if (gameMode === '3') {
+                if (myRole === 2) {
+                    row = 9 - row;
+                    col = 8 - col;
+                }
                 handleXiangqiClick(row, col, e.clientX, e.clientY);
             } else {
                 handleStandardClick(row, col, e.clientX, e.clientY);
