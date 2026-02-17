@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -32,13 +33,17 @@
             background: white;
             padding: 30px;
             border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             text-align: center;
             width: 90%;
             max-width: 400px;
         }
 
-        h1 { margin-top: 0; color: #333; font-size: 1.5rem; }
+        h1 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.5rem;
+        }
 
         #game-container {
             display: none;
@@ -52,7 +57,7 @@
             background: white;
             padding: 10px 20px;
             border-radius: 30px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             margin-bottom: 15px;
             font-weight: bold;
             font-size: 1.1rem;
@@ -61,7 +66,7 @@
 
         #canvas-wrapper {
             position: relative;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
             border-radius: 8px;
             overflow: visible;
         }
@@ -80,7 +85,7 @@
             margin-top: 15px;
             padding: 15px;
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
         .player-list {
@@ -97,17 +102,34 @@
             border-bottom: 1px solid #eee;
         }
 
-        .player-info { display: flex; align-items: center; gap: 8px; }
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .badge {
             font-size: 0.75rem;
             padding: 2px 6px;
             border-radius: 4px;
             color: white;
         }
-        .badge-host { background-color: var(--host-color); }
-        .badge-black { background-color: #000; }
-        .badge-white { background-color: #999; }
-        .badge-viewer { background-color: #ccc; }
+
+        .badge-host {
+            background-color: var(--host-color);
+        }
+
+        .badge-black {
+            background-color: #000;
+        }
+
+        .badge-white {
+            background-color: #999;
+        }
+
+        .badge-viewer {
+            background-color: #ccc;
+        }
 
         .role-btn {
             font-size: 0.8rem;
@@ -128,9 +150,19 @@
             transition: transform 0.2s, background 0.3s;
         }
 
-        button:active { transform: scale(0.95); }
-        button.secondary { background-color: #95a5a6; }
-        button.mini { padding: 5px 10px; font-size: 0.8rem; border-radius: 6px; }
+        button:active {
+            transform: scale(0.95);
+        }
+
+        button.secondary {
+            background-color: #95a5a6;
+        }
+
+        button.mini {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            border-radius: 6px;
+        }
 
         input {
             width: 100%;
@@ -151,16 +183,156 @@
             z-index: 100;
         }
 
-        .btn-confirm { background-color: var(--success-color); padding: 8px 16px; border-radius: 8px; }
-        .btn-cancel { background-color: var(--danger-color); padding: 8px 16px; border-radius: 8px; }
+        .btn-confirm {
+            background-color: var(--success-color);
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
 
-        .info-text { color: #7f8c8d; font-size: 0.85rem; margin-top: 10px; }
+        .btn-cancel {
+            background-color: var(--danger-color);
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+
+        .info-text {
+            color: #7f8c8d;
+            font-size: 0.85rem;
+            margin-top: 10px;
+        }
 
         @media (max-width: 600px) {
-            canvas { width: 95vw !important; height: auto !important; }
+            canvas {
+                width: 95vw !important;
+                height: auto !important;
+            }
+        }
+
+        /* 在线玩家面板 */
+        #online-players-panel {
+            background: white;
+            padding: 20px 24px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 400px;
+            margin-top: 20px;
+        }
+
+        .online-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .online-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .online-count-badge {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: #fff;
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .online-room-group {
+            background: #f8f9fb;
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-bottom: 10px;
+        }
+
+        .online-room-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+            color: #555;
+        }
+
+        .game-mode-tag {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .game-mode-tag.go {
+            background: #2ecc71;
+        }
+
+        .game-mode-tag.gomoku {
+            background: #3498db;
+        }
+
+        .game-mode-tag.xiangqi {
+            background: #e67e22;
+        }
+
+        .online-player-name {
+            display: inline-block;
+            background: #eef1f6;
+            color: #333;
+            font-size: 0.82rem;
+            padding: 3px 10px;
+            border-radius: 12px;
+            margin: 2px 4px 2px 0;
+        }
+
+        .online-empty {
+            text-align: center;
+            color: #aaa;
+            font-size: 0.9rem;
+            padding: 14px 0;
+        }
+
+        .join-room-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+
+        .join-room-btn:hover {
+            opacity: 0.85;
+        }
+
+        .join-room-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .kick-btn {
+            background-color: var(--danger-color);
+            color: #fff;
+            border: none;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            margin-left: 5px;
         }
     </style>
 </head>
+
 <body>
     <div id="setup">
         <h1>对弈平台</h1>
@@ -168,7 +340,8 @@
         <input type="text" id="roomInput" placeholder="输入房间号">
         <div style="margin-bottom: 15px; text-align: left;">
             <label>游戏模式：</label>
-            <select id="gameModeSelect" onchange="toggleSizeInput()" style="width: 100%; padding: 10px; border-radius: 8px;">
+            <select id="gameModeSelect" onchange="toggleSizeInput()"
+                style="width: 100%; padding: 10px; border-radius: 8px;">
                 <option value="1">围棋</option>
                 <option value="2">五子棋</option>
                 <option value="3">中国象棋</option>
@@ -181,9 +354,19 @@
         <button onclick="joinRoom()" style="width: 100%;">进入房间</button>
     </div>
 
+    <div id="online-players-panel">
+        <div class="online-header">
+            <h3>🟢 在线玩家</h3>
+            <span class="online-count-badge" id="online-count">0</span>
+        </div>
+        <div id="online-players-list">
+            <div class="online-empty">暂无在线玩家</div>
+        </div>
+    </div>
+
     <div id="game-container">
         <div id="status" class="status-card">正在连接...</div>
-        
+
         <div id="canvas-wrapper">
             <canvas id="board"></canvas>
             <div id="floating-confirm">
@@ -215,42 +398,28 @@
         const statusText = document.getElementById('status');
         const playerListUI = document.getElementById('player-list');
         const floatingConfirm = document.getElementById('floating-confirm');
-        
+
         let currentRoom = '';
         let myId = '';
-        let myRole = 0; 
+        let myRole = 0;
         let currentTurn = 1;
         let isHost = false;
-        let isStarted = false; 
+        let isStarted = false;
         let gameMode = '2'; // 默认五子棋编号 2
         let boardSize = 15;
-        let lastMove = null; 
-        let winLine = null; 
+        let lastMove = null;
+        let winLine = null;
         let board = [];
         let pendingMove = null;
         let selectedPiece = null; // 象棋选中棋子
         let capturedStones = { 1: 0, 2: 0 }; // 围棋提子
-        
+
         const CANVAS_SIZE = 600;
         const padding = 30;
         let cellSize = (CANVAS_SIZE - padding * 2) / 14;
 
         canvas.width = CANVAS_SIZE;
         canvas.height = CANVAS_SIZE;
-
-        function flipRow(r) {
-            if (gameMode === '3' && myRole === 2) {
-                return 9 - r;
-            }
-            return r;
-        }
-
-        function flipCol(c) {
-            if (gameMode === '3' && myRole === 2) {
-                return 8 - c;
-            }
-            return c;
-        }
 
         function toggleSizeInput() {
             const mode = document.getElementById('gameModeSelect').value;
@@ -266,14 +435,14 @@
             const roomInput = document.getElementById('roomInput');
             const modeSelect = document.getElementById('gameModeSelect');
             const sizeInput = document.getElementById('boardSizeInput');
-            
+
             const username = usernameInput.value.trim();
             const roomID = roomInput.value.trim();
             const mode = modeSelect.value;
             const size = sizeInput.value;
-            
+
             if (!username || !roomID) return alert('请输入用户名和房间号');
-            
+
             console.log(`Attempting to join room ${roomID} with mode ${mode}`);
             // 记录当前尝试加入的房间 ID，但不立即切换界面
             socket.emit('joinRoom', { roomID, username, gameMode: mode, boardSize: size });
@@ -297,6 +466,7 @@
 
             // 成功加入后才切换界面
             document.getElementById('setup').style.display = 'none';
+            document.getElementById('online-players-panel').style.display = 'none';
             document.getElementById('game-container').style.display = 'flex';
             document.getElementById('room-id-display').innerText = currentRoom;
 
@@ -315,7 +485,6 @@
             }
             updatePlayersUI(players);
             updateStatus();
-            if (gameMode === '3') drawBoard();
         });
 
         socket.on('updateBoard', (data) => {
@@ -323,7 +492,7 @@
             currentTurn = data.turn;
             isStarted = data.isStarted || false;
             lastMove = data.lastMove || null;
-            winLine = null; 
+            winLine = null;
             pendingMove = null;
             selectedPiece = null;
             if (data.capturedStones) capturedStones = data.capturedStones;
@@ -336,14 +505,14 @@
         });
 
         socket.on('gameModeMismatch', (data) => {
-    alert(`模式选择不匹配，应选为：${data.requiredModeName}`);
-    // 自动将下拉框切换到正确的模式
-    document.getElementById('gameModeSelect').value = data.requiredMode;
-    toggleSizeInput();
-    // 确保停留在初始界面
-    document.getElementById('setup').style.display = 'block';
-    document.getElementById('game-container').style.display = 'none';
-});
+            alert(`模式选择不匹配，应选为：${data.requiredModeName}`);
+            // 自动将下拉框切换到正确的模式
+            document.getElementById('gameModeSelect').value = data.requiredMode;
+            toggleSizeInput();
+            // 确保停留在初始界面
+            document.getElementById('setup').style.display = 'block';
+            document.getElementById('game-container').style.display = 'none';
+        });
 
         socket.on('resetRequested', (data) => {
             if (confirm(`${data.username} 请求重置棋局，是否同意？`)) {
@@ -373,11 +542,11 @@
             alert('对方拒绝了悔棋请求');
         });
 
-        socket.on('gameReset', (msg) => { 
+        socket.on('gameReset', (msg) => {
             isStarted = false;
             lastMove = null;
             winLine = null;
-            alert(msg || '游戏已重置'); 
+            alert(msg || '游戏已重置');
         });
 
         socket.on('resetDeclined', () => alert('对方拒绝了重置请求'));
@@ -408,7 +577,7 @@
             players.forEach(p => {
                 const li = document.createElement('li');
                 li.className = 'player-item';
-                
+
                 let roleBadge = '';
                 const roleText = gameMode === '3' ? (p.role === 1 ? '红方' : '黑方') : (p.role === 1 ? '黑棋' : '白棋');
                 if (p.role === 1) roleBadge = `<span class="badge badge-black">${roleText}</span>`;
@@ -416,7 +585,7 @@
                 else roleBadge = '<span class="badge badge-viewer">观众</span>';
 
                 const hostBadge = p.isHost ? '<span class="badge badge-host">房主</span>' : '';
-                
+
                 let controls = '';
                 // 只有房主能看到控制按钮，且游戏未开始时显示
                 if (isHost && !isStarted) {
@@ -427,6 +596,14 @@
                             <button class="mini role-btn" onclick="setRole('${p.id}', 1)">${role1Name}</button>
                             <button class="mini role-btn" onclick="setRole('${p.id}', 2)">${role2Name}</button>
                             <button class="mini role-btn secondary" onclick="setRole('${p.id}', 0)">设为观众</button>
+                            ${p.id !== myId ? `<button class="kick-btn" onclick="kickPlayer('${p.id}')">踢出</button>` : ''}
+                        </div>
+                    `;
+                } else if (isHost && p.id !== myId) {
+                    // 游戏进行中房主也可以踢人
+                    controls = `
+                        <div>
+                            <button class="kick-btn" onclick="kickPlayer('${p.id}')">踢出</button>
                         </div>
                     `;
                 }
@@ -440,7 +617,7 @@
                 `;
                 playerListUI.appendChild(li);
             });
-            
+
             // 更新房主提示文字
             const hostHint = document.getElementById('host-hint');
             if (isHost) {
@@ -480,7 +657,7 @@
 
         function drawBoard() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
+
             if (gameMode === '3') {
                 drawXiangqiBoard();
             } else {
@@ -501,20 +678,20 @@
             ctx.lineWidth = 1;
             for (let i = 0; i < boardSize; i++) {
                 ctx.moveTo(padding, padding + i * cellSize);
-                ctx.lineTo(padding + (boardSize-1) * cellSize, padding + i * cellSize);
+                ctx.lineTo(padding + (boardSize - 1) * cellSize, padding + i * cellSize);
                 ctx.moveTo(padding + i * cellSize, padding);
-                ctx.lineTo(padding + i * cellSize, padding + (boardSize-1) * cellSize);
+                ctx.lineTo(padding + i * cellSize, padding + (boardSize - 1) * cellSize);
             }
             ctx.stroke();
 
             // 绘制星位
             let stars = [];
             if (boardSize === 19) {
-                stars = [[3,3], [3,9], [3,15], [9,3], [9,9], [9,15], [15,3], [15,9], [15,15]];
+                stars = [[3, 3], [3, 9], [3, 15], [9, 3], [9, 9], [9, 15], [15, 3], [15, 9], [15, 15]];
             } else if (boardSize === 15) {
-                stars = [[3,3], [3,7], [3,11], [7,3], [7,7], [7,11], [11,3], [11,7], [11,11]];
+                stars = [[3, 3], [3, 7], [3, 11], [7, 3], [7, 7], [7, 11], [11, 3], [11, 7], [11, 11]];
             }
-            
+
             stars.forEach(([r, c]) => {
                 ctx.beginPath();
                 ctx.arc(padding + c * cellSize, padding + r * cellSize, 4, 0, Math.PI * 2);
@@ -539,27 +716,31 @@
             ctx.beginPath();
             ctx.strokeStyle = '#333';
             ctx.lineWidth = 1;
+            // 横线
             for (let i = 0; i < 10; i++) {
-                ctx.moveTo(padding + flipCol(0) * cellSize, padding + flipRow(i) * cellSize);
-                ctx.lineTo(padding + flipCol(8) * cellSize, padding + flipRow(i) * cellSize);
+                ctx.moveTo(padding, padding + i * cellSize);
+                ctx.lineTo(padding + 8 * cellSize, padding + i * cellSize);
             }
+            // 纵线
             for (let i = 0; i < 9; i++) {
-                ctx.moveTo(padding + flipCol(i) * cellSize, padding + flipRow(0) * cellSize);
+                ctx.moveTo(padding + i * cellSize, padding);
                 if (i === 0 || i === 8) {
-                    ctx.lineTo(padding + flipCol(i) * cellSize, padding + flipRow(9) * cellSize);
+                    ctx.lineTo(padding + i * cellSize, padding + 9 * cellSize);
                 } else {
-                    ctx.lineTo(padding + flipCol(i) * cellSize, padding + flipRow(4) * cellSize);
-                    ctx.moveTo(padding + flipCol(i) * cellSize, padding + flipRow(5) * cellSize);
-                    ctx.lineTo(padding + flipCol(i) * cellSize, padding + flipRow(9) * cellSize);
+                    ctx.lineTo(padding + i * cellSize, padding + 4 * cellSize);
+                    ctx.moveTo(padding + i * cellSize, padding + 5 * cellSize);
+                    ctx.lineTo(padding + i * cellSize, padding + 9 * cellSize);
                 }
             }
-            const xLines = [[3,0,5,2], [5,0,3,2], [3,7,5,9], [5,7,3,9]];
+            // 九宫格
+            const xLines = [[3, 0, 5, 2], [5, 0, 3, 2], [3, 7, 5, 9], [5, 7, 3, 9]];
             xLines.forEach(([c1, r1, c2, r2]) => {
-                ctx.moveTo(padding + flipCol(c1) * cellSize, padding + flipRow(r1) * cellSize);
-                ctx.lineTo(padding + flipCol(c2) * cellSize, padding + flipRow(r2) * cellSize);
+                ctx.moveTo(padding + c1 * cellSize, padding + r1 * cellSize);
+                ctx.lineTo(padding + c2 * cellSize, padding + r2 * cellSize);
             });
             ctx.stroke();
 
+            // 绘制棋子
             for (let r = 0; r < 10; r++) {
                 for (let c = 0; c < 9; c++) {
                     if (board[r] && board[r][c] !== 0) {
@@ -568,6 +749,7 @@
                 }
             }
 
+            // 绘制选中和最后移动标记
             if (selectedPiece) {
                 drawHighlight(selectedPiece.row, selectedPiece.col, 'rgba(0, 255, 0, 0.5)');
             }
@@ -579,14 +761,14 @@
 
         function drawHighlight(r, c, color) {
             ctx.fillStyle = color;
-            ctx.fillRect(padding + flipCol(c) * cellSize - cellSize/2, padding + flipRow(r) * cellSize - cellSize/2, cellSize, cellSize);
+            ctx.fillRect(padding + c * cellSize - cellSize / 2, padding + r * cellSize - cellSize / 2, cellSize, cellSize);
         }
 
         function drawXiangqiPiece(row, col, piece) {
-            const x = padding + flipCol(col) * cellSize;
-            const y = padding + flipRow(row) * cellSize;
+            const x = padding + col * cellSize;
+            const y = padding + row * cellSize;
             const names = ["", "帅", "仕", "相", "马", "车", "炮", "兵", "将", "士", "象", "马", "车", "炮", "卒"];
-            
+
             ctx.beginPath();
             ctx.arc(x, y, cellSize * 0.42, 0, Math.PI * 2);
             ctx.fillStyle = "#f3d5a8";
@@ -594,7 +776,7 @@
             ctx.strokeStyle = "#333";
             ctx.lineWidth = 2;
             ctx.stroke();
-            
+
             // 内部小圈
             ctx.beginPath();
             ctx.arc(x, y, cellSize * 0.35, 0, Math.PI * 2);
@@ -616,8 +798,8 @@
             ctx.globalAlpha = opacity;
             ctx.beginPath();
             ctx.arc(x, y, radius, 0, Math.PI * 2);
-            
-            const gradient = ctx.createRadialGradient(x - radius/3, y - radius/3, radius/10, x, y, radius);
+
+            const gradient = ctx.createRadialGradient(x - radius / 3, y - radius / 3, radius / 10, x, y, radius);
             if (role === 1) {
                 gradient.addColorStop(0, '#666');
                 gradient.addColorStop(1, '#000');
@@ -625,7 +807,7 @@
                 gradient.addColorStop(0, '#fff');
                 gradient.addColorStop(1, '#ccc');
             }
-            
+
             ctx.fillStyle = gradient;
             ctx.shadowBlur = 5;
             ctx.shadowColor = 'rgba(0,0,0,0.3)';
@@ -659,14 +841,10 @@
             const scaleY = canvas.height / rect.height;
             const x = (e.clientX - rect.left) * scaleX;
             const y = (e.clientY - rect.top) * scaleY;
-            let col = Math.round((x - padding) / cellSize);
-            let row = Math.round((y - padding) / cellSize);
-            
+            const col = Math.round((x - padding) / cellSize);
+            const row = Math.round((y - padding) / cellSize);
+
             if (gameMode === '3') {
-                if (myRole === 2) {
-                    row = 9 - row;
-                    col = 8 - col;
-                }
                 handleXiangqiClick(row, col, e.clientX, e.clientY);
             } else {
                 handleStandardClick(row, col, e.clientX, e.clientY);
@@ -683,10 +861,10 @@
 
         function handleXiangqiClick(row, col, clientX, clientY) {
             if (row < 0 || row >= 10 || col < 0 || col >= 9) return;
-            
+
             const piece = board[row][col];
             const isMyPiece = (myRole === 1 && piece >= 1 && piece <= 7) || (myRole === 2 && piece >= 8 && piece <= 14);
-            
+
             if (selectedPiece) {
                 if (selectedPiece.row === row && selectedPiece.col === col) {
                     // 点击已选中的棋子，取消选择
@@ -696,13 +874,13 @@
                     selectedPiece = { row, col };
                 } else {
                     // 尝试移动到目标位置（空位或对方棋子）
-                    socket.emit('makeMove', { 
-                        roomID: currentRoom, 
-                        row: selectedPiece.row, 
-                        col: selectedPiece.col, 
-                        targetRow: row, 
-                        targetCol: col, 
-                        role: myRole 
+                    socket.emit('makeMove', {
+                        roomID: currentRoom,
+                        row: selectedPiece.row,
+                        col: selectedPiece.col,
+                        targetRow: row,
+                        targetCol: col,
+                        role: myRole
                     });
                     // 不立即清空selectedPiece，等服务器返回updateBoard后自动清空
                     // 这样如果移动失败，棋子仍然保持选中状态
@@ -760,6 +938,100 @@
                 socket.emit('surrender', currentRoom);
             }
         }
+
+        // 在线玩家面板
+        socket.on('onlinePlayers', (data) => {
+            const countEl = document.getElementById('online-count');
+            const listEl = document.getElementById('online-players-list');
+            countEl.textContent = data.length;
+
+            if (data.length === 0) {
+                listEl.innerHTML = '<div class="online-empty">暂无在线玩家</div>';
+                return;
+            }
+
+            // 按房间分组
+            const grouped = {};
+            data.forEach(p => {
+                if (!grouped[p.roomID]) {
+                    grouped[p.roomID] = { gameModeName: p.gameModeName, gameMode: p.gameMode, players: [] };
+                }
+                grouped[p.roomID].players.push(p);
+            });
+
+            let html = '';
+            for (const roomID in grouped) {
+                const g = grouped[roomID];
+                let tagClass = 'gomoku';
+                if (g.gameMode === '1') tagClass = 'go';
+                else if (g.gameMode === '3') tagClass = 'xiangqi';
+
+                html += `<div class="online-room-group">`;
+                html += `<div class="online-room-title">`;
+                html += `<span class="game-mode-tag ${tagClass}">${g.gameModeName}</span>`;
+                html += `<span>房间: ${roomID}</span>`;
+                html += `<button class="join-room-btn" id="join-btn-${roomID}" onclick="requestJoinRoom('${roomID}', '${g.gameMode}')">申请加入</button>`;
+                html += `</div><div>`;
+                g.players.forEach(p => {
+                    html += `<span class="online-player-name">${p.username}</span>`;
+                });
+                html += `</div></div>`;
+            }
+            listEl.innerHTML = html;
+        });
+
+        // 申请加入房间
+        function requestJoinRoom(roomID, roomGameMode) {
+            const username = document.getElementById('usernameInput').value.trim();
+            if (!username) return alert('请先输入用户名');
+
+            const btn = document.getElementById('join-btn-' + roomID);
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = '等待审批中...';
+            }
+            socket.emit('requestJoinRoom', { roomID, username, gameMode: roomGameMode });
+        }
+
+        // 房主收到加入请求
+        socket.on('joinRequestReceived', (data) => {
+            if (confirm(`玩家 "${data.username}" 申请加入房间 ${data.roomID}，是否同意？`)) {
+                socket.emit('respondJoinRequest', { roomID: data.roomID, requesterId: data.requesterId, accept: true });
+            } else {
+                socket.emit('respondJoinRequest', { roomID: data.roomID, requesterId: data.requesterId, accept: false });
+            }
+        });
+
+        // 加入请求被拒绝
+        socket.on('joinRequestDeclined', (data) => {
+            alert(data.reason || '加入请求被拒绝');
+            // 恢复所有按钮状态
+            document.querySelectorAll('.join-room-btn').forEach(btn => {
+                btn.disabled = false;
+                btn.textContent = '申请加入';
+            });
+        });
+
+        // 被房主踢出房间
+        socket.on('kicked', (data) => {
+            alert(data.reason || '你已被移出房间');
+            // 返回设置页
+            currentRoom = '';
+            myRole = 0;
+            isHost = false;
+            isStarted = false;
+            document.getElementById('setup').style.display = 'block';
+            document.getElementById('online-players-panel').style.display = 'block';
+            document.getElementById('game-container').style.display = 'none';
+        });
+
+        // 踢出玩家函数
+        function kickPlayer(targetId) {
+            if (confirm('确定要将该玩家移出房间吗？')) {
+                socket.emit('kickPlayer', { roomID: currentRoom, targetId });
+            }
+        }
     </script>
 </body>
+
 </html>
