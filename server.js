@@ -56,8 +56,45 @@ const isBoardEmpty = (room) => {
     return room.board.every(row => row.every(cell => cell === 0));
 };
 
+// 广播在线玩家信息给所有客户端
+function broadcastOnlinePlayers() {
+    const onlineData = [];
+    for (const roomID in rooms) {
+        const room = rooms[roomID];
+        const modeName = MODE_NAMES[room.gameMode] || '未知模式';
+        room.players.forEach(p => {
+            onlineData.push({
+                username: p.username,
+                roomID: roomID,
+                gameMode: room.gameMode,
+                gameModeName: modeName,
+                role: p.role
+            });
+        });
+    }
+    io.emit('onlinePlayers', onlineData);
+}
+
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
+
+    // 发送当前在线玩家数据给新连接的客户端
+    const onlineData = [];
+    for (const roomID in rooms) {
+        const room = rooms[roomID];
+        const modeName = MODE_NAMES[room.gameMode] || '未知模式';
+        room.players.forEach(p => {
+            onlineData.push({
+                username: p.username,
+                roomID: roomID,
+                gameMode: room.gameMode,
+                gameModeName: modeName,
+                role: p.role
+            });
+        });
+    }
+    socket.emit('onlinePlayers', onlineData);
+
 
     socket.on('joinRoom', ({ roomID, username, gameMode, boardSize }) => {
         if (!roomID || !username) return;
@@ -69,11 +106,11 @@ io.on('connection', (socket) => {
         if (rooms[normalizedRoomID]) {
             // 校验游戏模式是否匹配
             const room = rooms[normalizedRoomID];
-            
+
             // 按照用户逻辑：如果房间号相同，校验游戏编号是否相同
             if (String(room.gameMode).trim() !== incomingMode) {
                 console.log(`Mode mismatch: room=${room.gameMode}, join=${incomingMode} in room ${normalizedRoomID}`);
-                return socket.emit('gameModeMismatch', { 
+                return socket.emit('gameModeMismatch', {
                     requiredMode: room.gameMode,
                     requiredModeName: MODE_NAMES[room.gameMode] || '未知模式'
                 });
@@ -86,27 +123,28 @@ io.on('connection', (socket) => {
 
         if (!rooms[normalizedRoomID]) {
             const size = parseInt(boardSize) || 15;
-            
+
             rooms[normalizedRoomID] = {
                 players: [],
                 gameMode: incomingMode,
                 boardSize: size,
                 board: createInitialBoard(incomingMode, size),
-                history: [], 
-                lastMove: null, 
+                history: [],
+                lastMove: null,
                 turn: 1, // 1 为黑/红, 2 为白/黑
                 resetVotes: new Set(),
-                undoVotes: new Set(), 
+                undoVotes: new Set(),
                 hostId: socket.id,
                 undoRequesterId: null,
                 capturedStones: { 1: 0, 2: 0 }, // 围棋提子数
                 previousBoardState: null, // 围棋劫争检测
                 gameOver: false, // 游戏结束标志
+                pendingRequests: new Map(), // 待审批的加入请求
             };
         }
 
         const room = rooms[normalizedRoomID];
-        
+
         // 确保房主 ID 在 players 中有对应的 isHost 标记
         room.hostId = room.players.length > 0 ? room.hostId : socket.id;
 
@@ -138,14 +176,15 @@ io.on('connection', (socket) => {
 
         // 广播房间人员变动
         io.to(normalizedRoomID).emit('updatePlayers', room.players);
-        socket.emit('updateBoard', { 
-            board: room.board, 
+        socket.emit('updateBoard', {
+            board: room.board,
             turn: room.turn,
             lastMove: room.lastMove,
             isStarted: !isBoardEmpty(room)
         });
 
         console.log(`User ${username} joined ${room.gameMode} room ${normalizedRoomID}`);
+        broadcastOnlinePlayers();
     });
 
     // 房主设置玩家角色
@@ -212,7 +251,7 @@ io.on('connection', (socket) => {
         if (room.gameOver) return; // 游戏已结束，等待重置
 
         const player = room.players.find(p => p.id === socket.id);
-        if (!player || player.role !== role) return; 
+        if (!player || player.role !== role) return;
 
         if (room.turn !== role) return;
 
@@ -234,9 +273,9 @@ io.on('connection', (socket) => {
             room.lastMove = { row, col };
             room.history.push({ type: 'move', row, col, role });
             room.turn = role === 1 ? 2 : 1;
-            
-            io.to(roomID).emit('updateBoard', { 
-                board: room.board, turn: room.turn, lastMove: room.lastMove, isStarted: true 
+
+            io.to(roomID).emit('updateBoard', {
+                board: room.board, turn: room.turn, lastMove: room.lastMove, isStarted: true
             });
 
             if (wasEmpty) io.to(roomID).emit('updatePlayers', room.players);
@@ -255,7 +294,7 @@ io.on('connection', (socket) => {
             const newBoard = JSON.parse(JSON.stringify(room.board));
             newBoard[row][col] = role;
             const captured = findCapturedStones(newBoard, row, col, role);
-            
+
             // 检查自杀
             if (captured.length === 0 && !hasLiberties(newBoard, row, col)) {
                 return socket.emit('errorMsg', '此处是禁着点（自杀）');
@@ -284,7 +323,7 @@ io.on('connection', (socket) => {
             room.history.push({ type: 'move', row, col, role, captured });
             room.turn = role === 1 ? 2 : 1;
 
-            io.to(roomID).emit('updateBoard', { 
+            io.to(roomID).emit('updateBoard', {
                 board: room.board, turn: room.turn, lastMove: room.lastMove, isStarted: true, capturedStones: room.capturedStones
             });
         }
@@ -306,7 +345,7 @@ io.on('connection', (socket) => {
         if (!isValidXiangqiMove(room.board, piece, row, col, targetRow, targetCol)) {
             return socket.emit('errorMsg', '不符合走子规则');
         }
-        
+
         // 模拟走子后检查是否被将军（送将检查）
         const tempBoard = room.board.map(r => [...r]);
         tempBoard[targetRow][targetCol] = piece;
@@ -317,13 +356,13 @@ io.on('connection', (socket) => {
 
         room.board[targetRow][targetCol] = piece;
         room.board[row][col] = 0;
-        
+
         room.lastMove = { row: targetRow, col: targetCol, fromRow: row, fromCol: col };
         room.history.push({ type: 'move', fromRow: row, fromCol: col, toRow: targetRow, toCol: targetCol, piece, targetPiece, role });
         room.turn = role === 1 ? 2 : 1;
 
-        io.to(roomID).emit('updateBoard', { 
-            board: room.board, turn: room.turn, lastMove: room.lastMove, isStarted: true 
+        io.to(roomID).emit('updateBoard', {
+            board: room.board, turn: room.turn, lastMove: room.lastMove, isStarted: true
         });
 
         // 检查对方是否被将死
@@ -386,10 +425,10 @@ io.on('connection', (socket) => {
     socket.on('confirmUndo', ({ roomID, accept }) => {
         const room = rooms[roomID];
         if (!room) return;
-        
+
         // 防止发起者自己确认/拒绝自己的悔棋请求
         if (socket.id === room.undoRequesterId) return;
-        
+
         // 只有对弈玩家（非观众）才能响应
         const responder = room.players.find(p => p.id === socket.id);
         if (!responder || responder.role === 0) return;
@@ -403,7 +442,7 @@ io.on('connection', (socket) => {
             }
 
             const targetRole = requester.role;
-            
+
             if (room.gameMode === GAME_MODES.XIANGQI) {
                 let lastAction = room.history[room.history.length - 1];
                 if (!lastAction) return;
@@ -466,15 +505,15 @@ io.on('connection', (socket) => {
                 room.previousBoardState = null;
             }
 
-            io.to(roomID).emit('updateBoard', { 
-                board: room.board, 
-                turn: room.turn, 
+            io.to(roomID).emit('updateBoard', {
+                board: room.board,
+                turn: room.turn,
                 lastMove: room.lastMove,
                 isStarted: !isBoardEmpty(room),
                 capturedStones: room.capturedStones
             });
             io.to(roomID).emit('undoSuccess');
-            
+
             room.undoVotes.clear();
             room.undoRequesterId = null;
         } else {
@@ -501,10 +540,10 @@ io.on('connection', (socket) => {
 
         const winnerRole = player.role === 1 ? 2 : 1;
         const winner = room.players.find(p => p.role === winnerRole);
-        
+
         room.gameOver = true;
-        io.to(roomID).emit('gameOver', { 
-            winner: winnerRole, 
+        io.to(roomID).emit('gameOver', {
+            winner: winnerRole,
             winnerName: winner ? winner.username : (winnerRole === 1 ? (room.gameMode === GAME_MODES.XIANGQI ? '红方' : '黑棋') : (room.gameMode === GAME_MODES.XIANGQI ? '黑方' : '白棋')),
             isSurrender: true,
             loserName: player.username
@@ -597,16 +636,141 @@ io.on('connection', (socket) => {
         }
     });
 
+    // 申请加入房间（需要房主审批）
+    socket.on('requestJoinRoom', ({ roomID, username, gameMode: reqGameMode }) => {
+        if (!roomID || !username) return;
+        const normalizedRoomID = String(roomID).trim();
+        const room = rooms[normalizedRoomID];
+        if (!room) {
+            return socket.emit('joinRequestDeclined', { reason: '房间不存在' });
+        }
+
+        // 校验游戏模式
+        const incomingMode = String(reqGameMode || GAME_MODES.GOMOKU).trim();
+        if (String(room.gameMode).trim() !== incomingMode) {
+            return socket.emit('joinRequestDeclined', { reason: `游戏模式不匹配，该房间为${MODE_NAMES[room.gameMode] || '未知模式'}` });
+        }
+
+        // 检查是否已在房间
+        if (room.players.find(p => p.id === socket.id)) {
+            return socket.emit('joinRequestDeclined', { reason: '你已在该房间中' });
+        }
+
+        // 检查是否已有待处理的请求
+        if (room.pendingRequests && room.pendingRequests.has(socket.id)) {
+            return socket.emit('joinRequestDeclined', { reason: '你的申请正在等待审批' });
+        }
+
+        // 存储待审批请求
+        if (!room.pendingRequests) room.pendingRequests = new Map();
+        room.pendingRequests.set(socket.id, { username, gameMode: incomingMode });
+
+        // 通知房主
+        const hostSocket = io.sockets.sockets.get(room.hostId);
+        if (hostSocket) {
+            hostSocket.emit('joinRequestReceived', {
+                requesterId: socket.id,
+                username: username,
+                roomID: normalizedRoomID
+            });
+        } else {
+            // 如果房主不在线，直接拒绝
+            room.pendingRequests.delete(socket.id);
+            socket.emit('joinRequestDeclined', { reason: '房主不在线' });
+        }
+    });
+
+    // 房主响应加入请求
+    socket.on('respondJoinRequest', ({ roomID, requesterId, accept }) => {
+        const room = rooms[roomID];
+        if (!room) return;
+        if (room.hostId !== socket.id) return; // 只有房主能响应
+
+        if (!room.pendingRequests) return;
+        const requestData = room.pendingRequests.get(requesterId);
+        if (!requestData) return;
+
+        room.pendingRequests.delete(requesterId);
+
+        const requesterSocket = io.sockets.sockets.get(requesterId);
+        if (!requesterSocket) return; // 请求者已断线
+
+        if (accept) {
+            // 让请求者加入房间
+            requesterSocket.join(roomID);
+
+            let role = 0; // 默认观众
+            if (room.players.filter(p => p.role !== 0).length < 2) {
+                const takenRoles = room.players.map(p => p.role);
+                role = takenRoles.includes(1) ? 2 : 1;
+            }
+            const player = { id: requesterId, username: requestData.username, role, isHost: false };
+            room.players.push(player);
+
+            // 发送初始化信息给新玩家
+            requesterSocket.emit('initData', {
+                myId: requesterId,
+                roomID: roomID,
+                gameMode: room.gameMode,
+                boardSize: room.boardSize,
+                players: room.players,
+                board: room.board,
+                lastMove: room.lastMove,
+                turn: room.turn,
+                isHost: false,
+                isStarted: !isBoardEmpty(room)
+            });
+
+            io.to(roomID).emit('updatePlayers', room.players);
+            requesterSocket.emit('updateBoard', {
+                board: room.board,
+                turn: room.turn,
+                lastMove: room.lastMove,
+                isStarted: !isBoardEmpty(room)
+            });
+
+            broadcastOnlinePlayers();
+            console.log(`User ${requestData.username} approved to join room ${roomID}`);
+        } else {
+            requesterSocket.emit('joinRequestDeclined', { reason: '房主拒绝了你的加入请求' });
+        }
+    });
+
+    // 踢出玩家
+    socket.on('kickPlayer', ({ roomID, targetId }) => {
+        const room = rooms[roomID];
+        if (!room) return;
+        if (room.hostId !== socket.id) return; // 只有房主能踢人
+        if (targetId === socket.id) return; // 不能踢自己
+
+        const targetIndex = room.players.findIndex(p => p.id === targetId);
+        if (targetIndex === -1) return;
+
+        const targetPlayer = room.players[targetIndex];
+        room.players.splice(targetIndex, 1);
+
+        // 让被踢玩家离开 socket 房间
+        const targetSocket = io.sockets.sockets.get(targetId);
+        if (targetSocket) {
+            targetSocket.leave(roomID);
+            targetSocket.emit('kicked', { reason: '你已被房主移出房间' });
+        }
+
+        io.to(roomID).emit('updatePlayers', room.players);
+        broadcastOnlinePlayers();
+        console.log(`User ${targetPlayer.username} was kicked from room ${roomID}`);
+    });
+
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
         for (const roomID in rooms) {
             const room = rooms[roomID];
             const playerIndex = room.players.findIndex(p => p.id === socket.id);
-            
+
             if (playerIndex !== -1) {
                 const wasHost = room.players[playerIndex].isHost;
                 room.players.splice(playerIndex, 1);
-                
+
                 if (room.players.length === 0) {
                     delete rooms[roomID];
                 } else {
@@ -619,6 +783,7 @@ io.on('connection', (socket) => {
                 }
             }
         }
+        broadcastOnlinePlayers();
     });
 });
 
@@ -630,12 +795,12 @@ function checkGomokuWin(board, row, col, role, size) {
         let count = 1;
         let line = [{ row, col }];
         let r = row + dr; let c = col + dc;
-        while (r >= 0 && r < size && c >= 0 && c < size && board[r][c] === role) { 
-            count++; line.push({ row: r, col: c }); r += dr; c += dc; 
+        while (r >= 0 && r < size && c >= 0 && c < size && board[r][c] === role) {
+            count++; line.push({ row: r, col: c }); r += dr; c += dc;
         }
         r = row - dr; c = col - dc;
-        while (r >= 0 && r < size && c >= 0 && c < size && board[r][c] === role) { 
-            count++; line.push({ row: r, col: c }); r -= dr; c -= dc; 
+        while (r >= 0 && r < size && c >= 0 && c < size && board[r][c] === role) {
+            count++; line.push({ row: r, col: c }); r -= dr; c -= dc;
         }
         if (count >= 5) return { line };
     }
@@ -643,26 +808,26 @@ function checkGomokuWin(board, row, col, role, size) {
 }
 
 function findCapturedStones(board, row, col, role) {
-        const opponent = role === 1 ? 2 : 1;
-        const captured = [];
-        const visitedGroups = new Set();
-        const directions = [[0, 1], [0, -1], [1, 0], [-1, 0]];
-        const size = board.length;
+    const opponent = role === 1 ? 2 : 1;
+    const captured = [];
+    const visitedGroups = new Set();
+    const directions = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+    const size = board.length;
 
-        directions.forEach(([dr, dc]) => {
-            const nr = row + dr, nc = col + dc;
-            if (nr >= 0 && nr < size && nc >= 0 && nc < size && board[nr][nc] === opponent) {
-                const key = `${nr},${nc}`;
-                if (visitedGroups.has(key)) return;
-                const group = getGroup(board, nr, nc);
-                group.forEach(pos => visitedGroups.add(`${pos.r},${pos.c}`));
-                if (!hasLibertiesInGroup(board, group)) {
-                    group.forEach(pos => captured.push(pos));
-                }
+    directions.forEach(([dr, dc]) => {
+        const nr = row + dr, nc = col + dc;
+        if (nr >= 0 && nr < size && nc >= 0 && nc < size && board[nr][nc] === opponent) {
+            const key = `${nr},${nc}`;
+            if (visitedGroups.has(key)) return;
+            const group = getGroup(board, nr, nc);
+            group.forEach(pos => visitedGroups.add(`${pos.r},${pos.c}`));
+            if (!hasLibertiesInGroup(board, group)) {
+                group.forEach(pos => captured.push(pos));
             }
-        });
-        return captured;
-    }
+        }
+    });
+    return captured;
+}
 
 function getGroup(board, r, c) {
     const color = board[r][c];
@@ -744,7 +909,7 @@ function isValidXiangqiMove(board, piece, fr, fc, tr, tc) {
             if (piece <= 7 && tr < 5) return false;
             if (piece > 7 && tr > 4) return false;
             // 塞象眼
-            if (board[fr + dr/2][fc + dc/2] !== 0) return false;
+            if (board[fr + dr / 2][fc + dc / 2] !== 0) return false;
             return true;
 
         case 4: // 马
@@ -845,23 +1010,23 @@ function isKingInCheck(board, role) {
 function isCheckmate(board, role) {
     // 如果当前没被将军，不算将死
     if (!isKingInCheck(board, role)) return false;
-    
+
     // 尝试己方所有合法走法，看是否能解将
     const minPiece = role === 1 ? 1 : 8;
     const maxPiece = role === 1 ? 7 : 14;
-    
+
     for (let fr = 0; fr < 10; fr++) {
         for (let fc = 0; fc < 9; fc++) {
             const p = board[fr][fc];
             if (p < minPiece || p > maxPiece) continue;
-            
+
             for (let tr = 0; tr < 10; tr++) {
                 for (let tc = 0; tc < 9; tc++) {
                     if (fr === tr && fc === tc) continue;
                     const target = board[tr][tc];
                     // 不能吃自己的子
                     if (target >= minPiece && target <= maxPiece) continue;
-                    
+
                     if (isValidXiangqiMove(board, p, fr, fc, tr, tc)) {
                         // 模拟走子
                         const tempBoard = board.map(r => [...r]);
